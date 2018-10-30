@@ -14,6 +14,7 @@ const defaultEnhancers = []
 const createStore = ({
   initialState = {},
   reducers = {},
+  resetStateOnActions = null,
   middleware = [],
   enhancers = [],
 }) => {
@@ -28,8 +29,19 @@ const createStore = ({
     devTools,
   ]
 
+  const rootReducer = combineReducers(reducers)
+  let wrapReducer = rootReducer;
+  if (resetStateOnActions !== null && Array.isArray(resetStateOnActions)) {
+    wrapReducer = (state, action) => {
+      if (resetStateOnActions.indexOf(action.type) !== -1) {
+        state = initialState
+      }
+      return rootReducer(state, action)
+    }
+  }
+
   const store = reduxCreateStore(
-    combineReducers(reducers),
+    wrapReducer,
     initialState,
     compose(
       applyMiddleware(...finalMiddleware),
